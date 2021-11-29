@@ -1,3 +1,5 @@
+// this is for test midi sounds
+
 import javax.sound.midi.*;
 
 public class MiniMusicPlayer {
