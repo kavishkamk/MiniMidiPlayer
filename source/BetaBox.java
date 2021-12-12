@@ -23,7 +23,9 @@ import javax.sound.midi.MidiEvent;
 import javax.sound.midi.ShortMessage;
 import java.io.File;
 import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -270,10 +272,43 @@ public class BetaBox {
 		}
 	}
 	
+	// restore previous track
 	private class MyReadInListener implements ActionListener {
+		
+		boolean[] checkBoxStatus = null;
+		
 		@Override
 		public void actionPerformed(ActionEvent event){
-		
+			try{
+				ObjectInputStream is = new ObjectInputStream(new FileInputStream(new File("checkbox.sar")));
+				checkBoxStatus = (boolean []) is.readObject();
+				is.close();
+			}
+			catch(ClassNotFoundException ex){
+				ex.printStackTrace();
+			}
+			catch(NullPointerException ex){
+				System.out.println("Please choose a File");
+				ex.printStackTrace();
+			}
+			catch(FileNotFoundException ex){
+				System.out.println("Cannot Open");
+				ex.printStackTrace();
+			}
+			catch(IOException ex){
+				ex.printStackTrace();
+			}
+			
+			for(int i = 0; i < 256; i++){
+				if(checkBoxStatus[i] == true){
+					checkBoxList.get(i).setSelected(true);
+				}
+				else{
+					checkBoxList.get(i).setSelected(false);
+				}
+			}
+			sequencer.stop();
+			buildTrackAndStart();
 		}
 	}
 }
