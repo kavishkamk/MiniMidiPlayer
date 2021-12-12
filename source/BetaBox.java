@@ -21,6 +21,11 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.ShortMessage;
+import java.io.File;
+import java.io.ObjectOutputStream;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 public class BetaBox {
 	
@@ -74,6 +79,14 @@ public class BetaBox {
 		JButton tempoDown = new JButton("Tempo Down");
 		tempoDown.addActionListener(new TempDownBtnHandler());
 		buttonBox.add(tempoDown);
+		
+		JButton serialize = new JButton("SerializeIt");
+		serialize.addActionListener(new MySendListener());
+		buttonBox.add(serialize);
+		
+		JButton restore = new JButton("Restore");
+		restore.addActionListener(new MyReadInListener());
+		buttonBox.add(restore);
 		
 		Box nameBox = new Box(BoxLayout.Y_AXIS);
 		
@@ -223,6 +236,44 @@ public class BetaBox {
 		public void actionPerformed(ActionEvent event){
 			float tempoFactor = sequencer.getTempoFactor();
 			sequencer.setTempoFactor((float)(tempoFactor * .97));
+		}
+	}
+	
+	// this class is used to store parttens
+	private class MySendListener implements ActionListener {
+		
+		boolean[] checkBoxStates = new boolean[256];
+		
+		@Override
+		public void actionPerformed(ActionEvent event){
+			
+			for(int i = 0; i < 256; i++)
+				if(checkBoxList.get(i).isSelected())
+					checkBoxStates[i] = true;
+			
+			try{
+				ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(new File("checkbox.sar")));
+				os.writeObject(checkBoxStates);
+				os.close();
+			}
+			catch(NullPointerException ex){
+				System.out.println("Pleace choose a File");
+				ex.printStackTrace();
+			}
+			catch(FileNotFoundException ex){
+				System.out.println("Cannot Open");
+				ex.printStackTrace();
+			}
+			catch(IOException ex){
+				ex.printStackTrace();
+			}
+		}
+	}
+	
+	private class MyReadInListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent event){
+		
 		}
 	}
 }
