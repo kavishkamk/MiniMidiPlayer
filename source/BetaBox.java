@@ -9,6 +9,9 @@ import javax.swing.JPanel;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JTextField;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.util.ArrayList;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -39,6 +42,7 @@ public class BetaBox {
 	private Track track;
 	private Sequence seq;
 	private Sequencer sequencer;
+	private JFrame frame;
 	
 	public static void main(String[] args){
 		// start interface in EDT
@@ -52,7 +56,7 @@ public class BetaBox {
 	}
 	
 	public void go(){
-		JFrame frame = new JFrame("Cyber BetaBox");
+		frame = new JFrame("Cyber BetaBox");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		BorderLayout layout = new BorderLayout();
@@ -89,6 +93,12 @@ public class BetaBox {
 		JButton restore = new JButton("Restore");
 		restore.addActionListener(new MyReadInListener());
 		buttonBox.add(restore);
+		
+		JButton send = new JButton("Send");
+		buttonBox.add(send);
+		
+		JTextField sendMsg = new JTextField();
+		buttonBox.add(sendMsg);
 		
 		Box nameBox = new Box(BoxLayout.Y_AXIS);
 		
@@ -253,22 +263,29 @@ public class BetaBox {
 				if(checkBoxList.get(i).isSelected())
 					checkBoxStates[i] = true;
 			
-			try{
-				ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(new File("checkbox.sar")));
-				os.writeObject(checkBoxStates);
-				os.close();
+			JFileChooser chooser = new JFileChooser();
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("serialized files", "sar");
+			chooser.setFileFilter(filter);
+			int val = chooser.showSaveDialog(frame);
+			if(val == JFileChooser.APPROVE_OPTION){
+				try{
+					ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(chooser.getSelectedFile().getName() + ".sar"));
+					os.writeObject(checkBoxStates);
+					os.close();
+				}
+				catch(NullPointerException ex){
+					System.out.println("Pleace choose a File");
+					ex.printStackTrace();
+				}
+				catch(FileNotFoundException ex){
+					System.out.println("Cannot Open");
+					ex.printStackTrace();
+				}
+				catch(IOException ex){
+					ex.printStackTrace();
+				}
 			}
-			catch(NullPointerException ex){
-				System.out.println("Pleace choose a File");
-				ex.printStackTrace();
-			}
-			catch(FileNotFoundException ex){
-				System.out.println("Cannot Open");
-				ex.printStackTrace();
-			}
-			catch(IOException ex){
-				ex.printStackTrace();
-			}
+			
 		}
 	}
 	
@@ -279,36 +296,43 @@ public class BetaBox {
 		
 		@Override
 		public void actionPerformed(ActionEvent event){
-			try{
-				ObjectInputStream is = new ObjectInputStream(new FileInputStream(new File("checkbox.sar")));
-				checkBoxStatus = (boolean []) is.readObject();
-				is.close();
-			}
-			catch(ClassNotFoundException ex){
-				ex.printStackTrace();
-			}
-			catch(NullPointerException ex){
-				System.out.println("Please choose a File");
-				ex.printStackTrace();
-			}
-			catch(FileNotFoundException ex){
-				System.out.println("Cannot Open");
-				ex.printStackTrace();
-			}
-			catch(IOException ex){
-				ex.printStackTrace();
-			}
 			
-			for(int i = 0; i < 256; i++){
-				if(checkBoxStatus[i] == true){
-					checkBoxList.get(i).setSelected(true);
+			JFileChooser chooser = new JFileChooser();
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("serialized files", "sar");
+			chooser.setFileFilter(filter);
+			int val = chooser.showOpenDialog(frame);
+			if(val == JFileChooser.APPROVE_OPTION){
+				try{
+					ObjectInputStream is = new ObjectInputStream(new FileInputStream(chooser.getSelectedFile()));
+					checkBoxStatus = (boolean []) is.readObject();
+					is.close();
 				}
-				else{
-					checkBoxList.get(i).setSelected(false);
+				catch(ClassNotFoundException ex){
+					ex.printStackTrace();
 				}
+				catch(NullPointerException ex){
+					System.out.println("Please choose a File");
+					ex.printStackTrace();
+				}
+				catch(FileNotFoundException ex){
+					System.out.println("Cannot Open");
+					ex.printStackTrace();
+				}
+				catch(IOException ex){
+					ex.printStackTrace();
+				}
+				
+				for(int i = 0; i < 256; i++){
+					if(checkBoxStatus[i] == true){
+						checkBoxList.get(i).setSelected(true);
+					}
+					else{
+						checkBoxList.get(i).setSelected(false);
+					}
+				}
+				sequencer.stop();
+				buildTrackAndStart();
 			}
-			sequencer.stop();
-			buildTrackAndStart();
 		}
 	}
 }
