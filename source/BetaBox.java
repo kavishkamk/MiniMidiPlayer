@@ -11,7 +11,10 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JTextField;
 import javax.swing.JFileChooser;
+import javax.swing.JList;
+import javax.swing.JScrollPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.ListSelectionModel;
 import java.util.ArrayList;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -31,6 +34,10 @@ import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java.net.Socket;
+import java.util.HashMap;
 
 public class BetaBox {
 	
@@ -43,19 +50,41 @@ public class BetaBox {
 	private Sequence seq;
 	private Sequencer sequencer;
 	private JFrame frame;
+	private JTextField sendMsg;
+	private String userName;
+	private ObjectInputStream ois;
+	private ObjectOutputStream oos;
+	private HashMap<String, boolean[]> otherSeqMap = new HashMap<String, boolean[]>();
 	
 	public static void main(String[] args){
-		// start interface in EDT
+		
+		new BetaBox().startUp((args.length > 0) ? args[0] : "user " + (int) (Math.random() * 100000));
+	}
+	
+	public void startUp(String uName){
+		userName = uName;
+		
+		try{
+			Socket socket = new Socket("localhost", 4242);
+			ois = new ObjectInputStream(socket.getInputStream());
+			oos = new ObjectOutputStream(socket.getOutputStream());
+			Thread readerThread = new Thread(new RemoteReader());
+			readerThread.start();
+		}
+		catch(Exception ex){
+			System.out.println("Cannot join with the server. running in offline");
+		}
+		
 		EventQueue.invokeLater(new Runnable(){
 			@Override
 			public void run(){
-				BetaBox obj = new BetaBox();
-				obj.go();
+				go();
 			}
 		});
 	}
 	
 	public void go(){
+		
 		frame = new JFrame("Cyber BetaBox");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -97,8 +126,13 @@ public class BetaBox {
 		JButton send = new JButton("Send");
 		buttonBox.add(send);
 		
-		JTextField sendMsg = new JTextField();
+		sendMsg = new JTextField();
 		buttonBox.add(sendMsg);
+		
+		JList jlist = new JList();
+		jlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		JScrollPane listScroller = new JScrollPane(jlist);
+		buttonBox.add(listScroller);
 		
 		Box nameBox = new Box(BoxLayout.Y_AXIS);
 		
@@ -254,10 +288,10 @@ public class BetaBox {
 	// this class is used to store parttens
 	private class MySendListener implements ActionListener {
 		
-		boolean[] checkBoxStates = new boolean[256];
-		
 		@Override
 		public void actionPerformed(ActionEvent event){
+			
+			boolean[] checkBoxStates = new boolean[256];
 			
 			for(int i = 0; i < 256; i++)
 				if(checkBoxList.get(i).isSelected())
@@ -332,6 +366,52 @@ public class BetaBox {
 				}
 				sequencer.stop();
 				buildTrackAndStart();
+			}
+		}
+	}
+	
+	// this class for read message over network
+	private class RemoteReader implements Runnable {
+		
+		private Object resObj = null;
+		private boolean[] resCheckBoxStatus = null;
+		
+		@Override
+		public void run(){
+			try{
+				while((resObj = ois.readObject()) != null){
+					String nameShow = (String) resObj;
+					resCheckBoxStatus = (boolean[]) ois.readObject();
+					otherSeqMap.put(nameShow, resCheckBoxStatus);
+					
+				}
+			}
+			catch(Exception ex){
+				
+			}
+		}
+	}
+	
+	private class SendOverConnectionListener implements ActionListener {
+		
+		@Override
+		public void actionPerformed(ActionEvent event){
+			
+			boolean[] checkBoxStates = new boolean[256];
+			
+			for(int i = 0; i < 256; i++)
+				if(checkBoxList.get(i).isSelected())
+					checkBoxStates[i] = true;
+			
+			
+			String mess = null;
+			
+			try{
+				oos.writeObject(userName + " : " + sendMsg.getText());
+				oos.writeObject(checkBoxStates);
+			}
+			catch(Exception ex){
+				System.out.println("Sorry. Cannot send to the server");
 			}
 		}
 	}
