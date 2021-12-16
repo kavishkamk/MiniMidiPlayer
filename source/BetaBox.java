@@ -1,43 +1,15 @@
-import java.awt.EventQueue;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import java.awt.BorderLayout;
-import java.awt.Label;
-import javax.swing.JPanel;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JTextField;
-import javax.swing.JFileChooser;
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.*;
+import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.ListSelectionModel;
 import java.util.ArrayList;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.sound.midi.Sequencer;
-import javax.sound.midi.MidiSystem;
-import javax.sound.midi.Sequence;
-import javax.sound.midi.Track;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiEvent;
-import javax.sound.midi.ShortMessage;
-import java.io.File;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
+import java.awt.event.*;
+import javax.sound.midi.*;
+import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.Vector;
+import javax.swing.event.*;
 
 public class BetaBox {
 	
@@ -45,7 +17,7 @@ public class BetaBox {
 		"Hand Clap", "High Tom", "Hi Bongo", "Maracas", "Whistle", "Low Conga", "Cowbell", 
 		"Vibraslap", "Low-mid Tom", "High Agogo", "Open Hi Conga"};
 	private int[] instruments = {35,42,46,38,49,39,50,60,70,72,64,56,58,47,67,63}; // instruments keys
-	private ArrayList<JCheckBox> checkBoxList;
+	public ArrayList<JCheckBox> checkBoxList;
 	private Track track;
 	private Sequence seq;
 	private Sequencer sequencer;
@@ -55,6 +27,8 @@ public class BetaBox {
 	private ObjectInputStream ois;
 	private ObjectOutputStream oos;
 	private HashMap<String, boolean[]> otherSeqMap = new HashMap<String, boolean[]>();
+	private Vector<String> listVector = new Vector<String>();
+	private JList<String> incomingList;
 	
 	public static void main(String[] args){
 		
@@ -74,6 +48,8 @@ public class BetaBox {
 		catch(Exception ex){
 			System.out.println("Cannot join with the server. running in offline");
 		}
+		
+		setUpMidi();
 		
 		EventQueue.invokeLater(new Runnable(){
 			@Override
@@ -124,15 +100,18 @@ public class BetaBox {
 		buttonBox.add(restore);
 		
 		JButton send = new JButton("Send");
+		send.addActionListener(new SendOverConnectionListener());
 		buttonBox.add(send);
 		
 		sendMsg = new JTextField();
 		buttonBox.add(sendMsg);
 		
-		JList jlist = new JList();
-		jlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		JScrollPane listScroller = new JScrollPane(jlist);
+		incomingList = new JList<String>();
+		incomingList.addListSelectionListener(new MyListSelectionListener());
+		incomingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		JScrollPane listScroller = new JScrollPane(incomingList);
 		buttonBox.add(listScroller);
+		incomingList.setListData(listVector);
 		
 		Box nameBox = new Box(BoxLayout.Y_AXIS);
 		
@@ -159,8 +138,6 @@ public class BetaBox {
 		
 		background.add(BorderLayout.CENTER, gridPanel);
 		frame.getContentPane().add(background);
-		
-		setUpMidi();
 		
 		frame.setBounds(50,50,300,300);
 		frame.pack();
@@ -383,7 +360,8 @@ public class BetaBox {
 					String nameShow = (String) resObj;
 					resCheckBoxStatus = (boolean[]) ois.readObject();
 					otherSeqMap.put(nameShow, resCheckBoxStatus);
-					
+					listVector.add(nameShow);
+					incomingList.setListData(listVector);
 				}
 			}
 			catch(Exception ex){
@@ -412,6 +390,33 @@ public class BetaBox {
 			}
 			catch(Exception ex){
 				System.out.println("Sorry. Cannot send to the server");
+			}
+		}
+	}
+		
+	public class MyListSelectionListener implements ListSelectionListener {
+		public void valueChanged(ListSelectionEvent le) {
+			if (!le.getValueIsAdjusting()) {
+				String selected = (String) incomingList.getSelectedValue();
+				if (selected != null) {
+					// now go to the map, and change the sequence
+					boolean[] selectedState = (boolean[]) otherSeqMap.get(selected);
+					changeSequence(selectedState);
+					sequencer.stop();
+					buildTrackAndStart();
+				}
+			}
+		}
+	}
+	
+	public void changeSequence(boolean[] checkboxState) {
+		for (int i = 0; i < 256; i++) {
+			JCheckBox check = (JCheckBox) checkBoxList.get(i);
+			if (checkboxState[i]) {
+				check.setSelected(true);
+			}
+			else {
+				check.setSelected(false);
 			}
 		}
 	}
