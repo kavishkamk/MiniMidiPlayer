@@ -10,6 +10,9 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Vector;
 import javax.swing.event.*;
+import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.LookAndFeel;
 
 public class BetaBox {
 	
@@ -54,6 +57,17 @@ public class BetaBox {
 		EventQueue.invokeLater(new Runnable(){
 			@Override
 			public void run(){
+				// added nimbus look and feel
+				for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+					if ("Nimbus".equals(info.getName())) {
+						try {
+							UIManager.setLookAndFeel(info.getClassName());
+						} catch(Exception ex) {
+							ex.printStackTrace();
+						}
+						break;
+					}
+				}
 				go();
 			}
 		});
