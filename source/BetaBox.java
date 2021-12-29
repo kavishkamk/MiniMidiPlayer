@@ -62,6 +62,7 @@ public class BetaBox {
 	public void go(){
 		
 		frame = new JFrame("Cyber BetaBox");
+		frame.setLayout(new BorderLayout(10, 5));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		BorderLayout layout = new BorderLayout();
@@ -73,44 +74,62 @@ public class BetaBox {
 		
 		// set buttons, register with action listener and add to the interface
 		
+		Dimension de = new Dimension(0,2);
+		
 		// start the track
 		// when start, it go through all the check boxes and read the data and then create track and play it as a loop
 		JButton start = new JButton("Start");
+		start.setFocusable(false);
 		start.addActionListener(new StartBtnhandle());
 		buttonBox.add(start);
+		buttonBox.add(Box.createRigidArea(de));
 		
 		JButton stop = new JButton("Stop");
+		stop.setFocusable(false);
 		stop.addActionListener(new StopBtnHandler());
 		buttonBox.add(stop);
+		buttonBox.add(Box.createRigidArea(de));
 		
 		JButton tempoUp = new JButton("Tempo Up");
+		tempoUp.setFocusable(false);
 		tempoUp.addActionListener(new TempoUpBtnHandler());
 		buttonBox.add(tempoUp);
+		buttonBox.add(Box.createRigidArea(de));
 		
 		JButton tempoDown = new JButton("Tempo Down");
+		tempoDown.setFocusable(false);
 		tempoDown.addActionListener(new TempDownBtnHandler());
 		buttonBox.add(tempoDown);
+		buttonBox.add(Box.createRigidArea(de));
 		
 		JButton serialize = new JButton("SerializeIt");
+		serialize.setFocusable(false);
+		serialize.setMnemonic(KeyEvent.VK_S);
 		serialize.addActionListener(new MySendListener());
 		buttonBox.add(serialize);
+		buttonBox.add(Box.createRigidArea(de));
 		
 		JButton restore = new JButton("Restore");
+		restore.setFocusable(false);
 		restore.addActionListener(new MyReadInListener());
 		buttonBox.add(restore);
+		buttonBox.add(Box.createRigidArea(de));
 		
 		JButton send = new JButton("Send");
+		send.setFocusable(false);
 		send.addActionListener(new SendOverConnectionListener());
 		buttonBox.add(send);
 		
 		sendMsg = new JTextField();
 		buttonBox.add(sendMsg);
+		buttonBox.add(Box.createRigidArea(de));
 		
 		incomingList = new JList<String>();
 		incomingList.addListSelectionListener(new MyListSelectionListener());
 		incomingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane listScroller = new JScrollPane(incomingList);
 		buttonBox.add(listScroller);
+		buttonBox.add(Box.createRigidArea(de));
 		incomingList.setListData(listVector);
 		
 		Box nameBox = new Box(BoxLayout.Y_AXIS);
