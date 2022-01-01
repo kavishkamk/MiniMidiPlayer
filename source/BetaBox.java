@@ -42,6 +42,7 @@ public class BetaBox {
 		userName = uName;
 		
 		try{
+			// set up connection
 			Socket socket = new Socket("localhost", 4242);
 			ois = new ObjectInputStream(socket.getInputStream());
 			oos = new ObjectOutputStream(socket.getOutputStream());
@@ -54,6 +55,7 @@ public class BetaBox {
 		
 		setUpMidi();
 		
+		// start running GUI
 		EventQueue.invokeLater(new Runnable(){
 			@Override
 			public void run(){
@@ -77,6 +79,7 @@ public class BetaBox {
 		
 		frame = new JFrame("Cyber BetaBox");
 		frame.setLayout(new BorderLayout(10, 5));
+		frame.setIconImage(new ImageIcon("logo.png").getImage());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		BorderLayout layout = new BorderLayout();
@@ -174,6 +177,7 @@ public class BetaBox {
 		
 		frame.setBounds(50,50,300,300);
 		frame.pack();
+		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 	}
 	
@@ -403,6 +407,7 @@ public class BetaBox {
 		}
 	}
 	
+	// broad cast track with the user message type to the users
 	private class SendOverConnectionListener implements ActionListener {
 		
 		@Override
@@ -426,7 +431,8 @@ public class BetaBox {
 			}
 		}
 	}
-		
+	
+	// get track from selected list
 	public class MyListSelectionListener implements ListSelectionListener {
 		public void valueChanged(ListSelectionEvent le) {
 			if (!le.getValueIsAdjusting()) {
@@ -442,6 +448,7 @@ public class BetaBox {
 		}
 	}
 	
+	// set given track
 	public void changeSequence(boolean[] checkboxState) {
 		for (int i = 0; i < 256; i++) {
 			JCheckBox check = (JCheckBox) checkBoxList.get(i);
